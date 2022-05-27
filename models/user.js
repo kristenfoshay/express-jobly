@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 const db = require("../db");
 const bcrypt = require("bcrypt");
@@ -124,7 +124,7 @@ class User {
    **/
 
   static async get(username) {
-    const userRes = await db.query(
+    const userResults = await db.query(
           `SELECT username,
                   first_name AS "firstName",
                   last_name AS "lastName",
@@ -135,7 +135,7 @@ class User {
         [username],
     );
 
-    const user = userRes.rows[0];
+    const user = userResults.rows[0];
 
     if (!user) throw new NotFoundError(`No user: ${username}`);
 
@@ -204,6 +204,33 @@ class User {
 
     if (!user) throw new NotFoundError(`No user: ${username}`);
   }
+}
+
+static async jobApplication(username, jobId) {
+  //check if user exists
+  const userResults = await db.query(
+      `SELECT username
+        FROM users
+        WHERE username = $1`, [username]
+  );
+  const user = userResults.rows[0];
+  if (!user) throw new NotFoundError(`No user: ${username}`);
+
+  //check if job exists
+  const jobResults = await db.query(
+      `SELECT id
+      FROM jobs
+      WHERE id = $1`, [jobId]
+  );
+  const job = jobResults.rows[0];
+  if (!job) throw new NotFoundError(`No job: ${jobId}`);
+
+  //insert application record
+  await db.query(
+      `INSERT INTO applications
+      (username, job_id)
+      VALUES ($1, $2)`, [username, jobId]
+  );
 }
 
 

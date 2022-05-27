@@ -9,7 +9,7 @@ const { ensureLoggedIn } = require("../middleware/auth");
 const { BadRequestError } = require("../expressError");
 const User = require("../models/user");
 const { createToken } = require("../helpers/tokens");
-const userNewSchema = require("../schemas/userNew.json");
+const userNewSchema = require("../schemas/userNewSchema.json");
 const userUpdateSchema = require("../schemas/userUpdate.json");
 
 const router = express.Router();
@@ -51,12 +51,12 @@ router.post("/", ensureLoggedIn, async function (req, res, next) {
  * Authorization required: login
  **/
 
-router.get("/", ensureLoggedIn, async function (req, res, next) {
+ router.get('/', checkForAdmin, async function(req, res, next) {
   try {
-    const users = await User.findAll();
-    return res.json({ users });
+      const users = await User.findAll();
+      return res.json({ users });
   } catch (err) {
-    return next(err);
+      return next(err);
   }
 });
 
@@ -68,12 +68,12 @@ router.get("/", ensureLoggedIn, async function (req, res, next) {
  * Authorization required: login
  **/
 
-router.get("/:username", ensureLoggedIn, async function (req, res, next) {
+ router.get('/:username', checkValidUser, async function(req, res, next) {
   try {
-    const user = await User.get(req.params.username);
-    return res.json({ user });
+      const user = await User.get(req.params.username);
+      return res.json({ user });
   } catch (err) {
-    return next(err);
+      return next(err);
   }
 });
 
@@ -118,5 +118,14 @@ router.delete("/:username", ensureLoggedIn, async function (req, res, next) {
   }
 });
 
+router.post('/:username/jobs/:id', checkValidUser, async function(req, res, next) {
+  try {
+      const jobId = +req.params.id;
+      await User.jobApplication(req.params.username, jobId);
+      return res.json({ applied: jobId });
+  } catch (err) {
+      return next(err);
+  }
+});
 
 module.exports = router;

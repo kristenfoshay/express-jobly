@@ -1,8 +1,8 @@
-"use strict";
+'use strict';
 
 const db = require("../db");
 const { BadRequestError, NotFoundError } = require("../expressError");
-const { sqlForPartialUpdate } = require("../helpers/sql");
+const { sqlForPartialUpdate, sqlQuerySearch } = require("../helpers/sql");
 
 /** Related functions for companies. */
 
@@ -49,17 +49,23 @@ class Company {
    * Returns [{ handle, name, description, numEmployees, logoUrl }, ...]
    * */
 
-  static async findAll() {
-    const companiesRes = await db.query(
-          `SELECT handle,
-                  name,
-                  description,
-                  num_employees AS "numEmployees",
-                  logo_url AS "logoUrl"
-           FROM companies
-           ORDER BY name`);
-    return companiesRes.rows;
-  }
+   static async findAll(query = {}) {
+    let querySql = `SELECT handle,
+              name,
+              description,
+              num_employees AS "numEmployees",
+              logo_url AS "logoUrl"
+       FROM companies`;
+
+    const { whereCols, values } = sqlQuerySearch(query);
+
+    if (whereCols) querySql += ` WHERE ${whereCols}`;
+    querySql += ' ORDER BY name';
+
+    const companiesResults = await db.query(querySql, values);
+
+    return companiesResults.rows;
+}
 
   /** Given a company handle, return data about company.
    *
@@ -70,7 +76,7 @@ class Company {
    **/
 
   static async get(handle) {
-    const companyRes = await db.query(
+    const companyResults = await db.query(
           `SELECT handle,
                   name,
                   description,
@@ -80,7 +86,7 @@ class Company {
            WHERE handle = $1`,
         [handle]);
 
-    const company = companyRes.rows[0];
+    const company = companyResults.rows[0];
 
     if (!company) throw new NotFoundError(`No company: ${handle}`);
 

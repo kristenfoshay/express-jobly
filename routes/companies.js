@@ -9,8 +9,8 @@ const { BadRequestError } = require("../expressError");
 const { ensureLoggedIn } = require("../middleware/auth");
 const Company = require("../models/company");
 
-const companyNewSchema = require("../schemas/companyNew.json");
-const companyUpdateSchema = require("../schemas/companyUpdate.json");
+const newCompanySchema = require("../schemas/newCompanySchema.json");
+const updateCompanySchema = require("../schemas/updateCompanySchema.json");
 
 const router = new express.Router();
 
@@ -24,19 +24,19 @@ const router = new express.Router();
  * Authorization required: login
  */
 
-router.post("/", ensureLoggedIn, async function (req, res, next) {
-  try {
-    const validator = jsonschema.validate(req.body, companyNewSchema);
-    if (!validator.valid) {
-      const errs = validator.errors.map(e => e.stack);
-      throw new BadRequestError(errs);
-    }
+router.post('/', checkForAdmin, async function(req, res, next) {
+    try {
+        const validator = jsonschema.validate(req.body, newCompanySchema);
+        if (!validator.valid) {
+            const errs = validator.errors.map((e) => e.stack);
+            throw new BadRequestError(errs);
+        }
 
-    const company = await Company.create(req.body);
-    return res.status(201).json({ company });
-  } catch (err) {
-    return next(err);
-  }
+        const company = await Company.create(req.body);
+        return res.status(201).json({ company });
+    } catch (err) {
+        return next(err);
+    }
 });
 
 /** GET /  =>
@@ -89,7 +89,7 @@ router.get("/:handle", async function (req, res, next) {
 
 router.patch("/:handle", ensureLoggedIn, async function (req, res, next) {
   try {
-    const validator = jsonschema.validate(req.body, companyUpdateSchema);
+    const validator = jsonschema.validate(req.body, updateCompanySchema);
     if (!validator.valid) {
       const errs = validator.errors.map(e => e.stack);
       throw new BadRequestError(errs);

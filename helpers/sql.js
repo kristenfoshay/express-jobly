@@ -17,4 +17,56 @@ function sqlForPartialUpdate(dataToUpdate, jsToSql) {
   };
 }
 
-module.exports = { sqlForPartialUpdate };
+function sqlQuerySearch(query = {}) {
+  const { minEmployees, maxEmployees, name } = query;
+
+  if (minEmployees > maxEmployees) {
+      throw new BadRequestError('Min employees must be greater than max employees');
+  }
+  let queryValues = [];
+  let sql = [];
+
+  if (minEmployees !== undefined) {
+      queryValues.push(minEmployees);
+      sql.push(`num_employees >= $${queryValues.length}`);
+  }
+  if (maxEmployees !== undefined) {
+      queryValues.push(maxEmployees);
+      sql.push(`num_employees <= $${queryValues.length}`);
+  }
+  if (name) {
+      queryValues.push(`%${name}%`);
+      sql.push(`name ILIKE $${queryValues.length}`);
+  }
+
+  return {
+      whereCols: sql.join(' AND '),
+      values: queryValues
+  };
+}
+
+function sqlJobQuerySearch(query = {}) {
+  const { minimumSalary, equityCheck, title } = query;
+
+  let queryValues = [];
+  let sql = [];
+
+  if (minimumSalary !== undefined) {
+      queryValues.push(minimumSalary);
+      sql.push(`salary >= $${queryValues.length}`);
+  }
+  if (equityCheck === true) {
+      sql.push(`equity > 0`);
+  }
+  if (title) {
+      queryValues.push(`%${title}%`);
+      sql.push(`title ILIKE $${queryValues.length}`);
+  }
+
+  return {
+      whereCols: sql.join(' AND '),
+      values: queryValues
+  };
+}
+
+module.exports = { sqlForPartialUpdate, sqlQuerySearch, sqlJobQuerySearch };
