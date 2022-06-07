@@ -5,7 +5,7 @@
 const jsonschema = require("jsonschema");
 
 const express = require("express");
-const { ensureLoggedIn, checkForAdmin, checkValidUser } = require("../middleware/auth");
+const {  ensureAdmin, ensureCorrectUserOrAdmin } = require("../middleware/auth");
 const { BadRequestError } = require("../expressError");
 const User = require("../models/user");
 const { createToken } = require("../helpers/tokens");
@@ -27,7 +27,7 @@ const router = express.Router();
  * Authorization required: login
  **/
 
-router.post("/", checkForAdmin, async function (req, res, next) {
+router.post("/", ensureAdmin, async function (req, res, next) {
   try {
     const validator = jsonschema.validate(req.body, userNewSchema);
     if (!validator.valid) {
@@ -51,7 +51,7 @@ router.post("/", checkForAdmin, async function (req, res, next) {
  * Authorization required: login
  **/
 
- router.get('/', checkValidUser, async function(req, res, next) {
+ router.get("/", ensureAdmin, async function (req, res, next) {
   try {
       const users = await User.findAll();
       return res.json({ users });
@@ -68,7 +68,7 @@ router.post("/", checkForAdmin, async function (req, res, next) {
  * Authorization required: login
  **/
 
- router.get('/:username', checkValidUser, async function(req, res, next) {
+ router.get("/:username", ensureCorrectUserOrAdmin, async function (req, res, next) {
   try {
       const user = await User.get(req.params.username);
       return res.json({ user });
@@ -88,7 +88,7 @@ router.post("/", checkForAdmin, async function (req, res, next) {
  * Authorization required: login
  **/
 
-router.patch("/:username", ensureLoggedIn, checkValidUser, async function (req, res, next) {
+router.patch("/:username", ensureCorrectUserOrAdmin, async function (req, res, next) {
   try {
     const validator = jsonschema.validate(req.body, userUpdateSchema);
     if (!validator.valid) {
@@ -109,7 +109,7 @@ router.patch("/:username", ensureLoggedIn, checkValidUser, async function (req, 
  * Authorization required: login
  **/
 
-router.delete("/:username", checkValidUser, async function (req, res, next) {
+router.delete("/:username", ensureCorrectUserOrAdmin, async function (req, res, next) {
   try {
     await User.remove(req.params.username);
     return res.json({ deleted: req.params.username });
@@ -118,7 +118,7 @@ router.delete("/:username", checkValidUser, async function (req, res, next) {
   }
 });
 
-router.post('/:username/jobs/:id', checkValidUser, async function(req, res, next) {
+router.post('/:username/jobs/:id', ensureCorrectUserOrAdmin, async function(req, res, next) {
   try {
       const jobId = +req.params.id;
       await User.jobApplication(req.params.username, jobId);

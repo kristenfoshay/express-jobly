@@ -6,7 +6,7 @@ const jsonschema = require('jsonschema');
 const express = require('express');
 
 const { BadRequestError } = require('../expressError');
-const { checkForAdmin } = require('../middleware/auth');
+const {ensureAdmin } = require('../middleware/auth');
 const Job = require('../models/job');
 
 const newJobSchema = require('../schemas/newJobSchema.json');
@@ -24,7 +24,7 @@ const router = new express.Router();
  * Authorization required: admin
  */
 
-router.post('/', checkForAdmin, async function(req, res, next) {
+router.post('/',ensureAdmin, async function(req, res, next) {
     try {
         const validator = jsonschema.validate(req.body, newJobSchema);
         if (!validator.valid) {
@@ -99,7 +99,7 @@ router.get('/:id', async function(req, res, next) {
  * Authorization required: admin
  */
 
-router.patch('/:id', checkForAdmin, async function(req, res, next) {
+router.patch('/:id',ensureAdmin, async function(req, res, next) {
     try {
         const validator = jsonschema.validate(req.body, updateJobSchema);
         if (!validator.valid) {
@@ -119,7 +119,7 @@ router.patch('/:id', checkForAdmin, async function(req, res, next) {
  * Authorization: admin
  */
 
-router.delete('/:id', checkForAdmin, async function(req, res, next) {
+router.delete('/:id',ensureAdmin, async function(req, res, next) {
     try {
         await Job.remove(req.params.id);
         return res.json({ deleted: req.params.id });
